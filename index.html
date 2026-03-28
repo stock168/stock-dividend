@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="股利查詢">
+<meta name="theme-color" content="#1a56db">
+<title>台股股利查詢</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:#f0f2f5; --panel:#fff; --border:#e2e6ea;
+  --accent:#1a56db; --text:#111928; --sub:#6b7280; --muted:#9ca3af;
+  --gold:#d97706; --green:#059669; --red:#dc2626; --warn:#e3a008;
+  --tag-bg:#eff6ff; --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.05);
+  --r:12px; --rs:8px;
+}
+body { background:var(--bg); color:var(--text); font-family:'Noto Sans TC',sans-serif; min-height:100vh; font-size:14px; }
+.app { max-width:1200px; margin:0 auto; padding:32px 16px 80px; }
+
+/* Header */
+.header { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+.hicon { width:44px;height:44px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0; }
+.header h1 { font-family:'Oxanium',monospace;font-size:22px;font-weight:700;letter-spacing:-.3px; }
+.header p { font-size:13px;color:var(--sub);margin-top:1px; }
+
+/* Notice */
+.notice { background:#fffbeb;border:1px solid #fde68a;border-radius:var(--rs);padding:11px 15px;font-size:12px;color:#92400e;display:flex;gap:8px;margin-bottom:16px; }
+.notice a { color:var(--accent); }
+
+/* Search */
+.search-card { background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);padding:20px;margin-bottom:16px; }
+.search-row { display:flex;gap:10px;flex-wrap:wrap; }
+.sinp { flex:1;min-width:120px;max-width:200px;border:2px solid var(--border);border-radius:var(--rs);padding:12px 16px;font-size:18px;font-family:'Oxanium',monospace;font-weight:600;letter-spacing:3px;color:var(--text);outline:none;transition:border-color .2s; }
+.sinp:focus { border-color:var(--accent); }
+.sinp::placeholder { font-size:13px;letter-spacing:1px;font-weight:400;color:var(--muted); }
+.sbtn { background:var(--accent);color:#fff;border:none;border-radius:var(--rs);padding:12px 28px;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s,transform .1s; }
+.sbtn:hover { background:#1648c8; }
+.sbtn:active { transform:scale(.97); }
+.sbtn:disabled { background:var(--muted);cursor:not-allowed; }
+.qlabel { font-size:12px;color:var(--muted);margin:12px 0 8px; }
+.chips { display:flex;flex-wrap:wrap;gap:6px; }
+.chip { font-family:'Oxanium',monospace;font-size:12px;padding:4px 12px;border:1.5px solid var(--border);border-radius:20px;cursor:pointer;color:var(--sub);background:transparent;transition:all .15s;font-weight:500; }
+.chip:hover { border-color:var(--accent);color:var(--accent);background:var(--tag-bg); }
+
+/* Loading */
+.loading { display:none;text-align:center;padding:48px 20px; }
+.loading.show { display:block; }
+.spinner { display:inline-block;width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.ltxt { font-size:14px;color:var(--sub);margin-top:12px; }
+.lstep { font-size:12px;color:var(--muted);font-family:'Oxanium',monospace;margin-top:6px; }
+
+/* Error */
+.errc { display:none;background:#fff5f5;border:1.5px solid #fed7d7;border-radius:var(--r);padding:20px 24px;margin-bottom:16px; }
+.errc.show { display:block; }
+.errt { font-weight:700;color:var(--red);margin-bottom:6px; }
+.errb { font-size:13px;color:var(--sub);line-height:1.8; }
+.errb a { color:var(--accent); }
+
+/* Result */
+.result { display:none;animation:fadeUp .35s ease; }
+.result.show { display:block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1} }
+
+/* Summary card */
+.sum-card { background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);padding:24px;margin-bottom:16px; }
+.sum-top { display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:16px;margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--border); }
+.sid { font-family:'Oxanium',monospace;font-size:32px;font-weight:700;color:var(--accent);letter-spacing:1px;line-height:1; }
+.snm { font-size:16px;color:var(--sub);margin-top:6px;font-weight:500; }
+.kpis { display:flex;gap:24px;flex-wrap:wrap; }
+.kpi { text-align:right; }
+.klbl { font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bottom:3px;text-transform:uppercase; }
+.kval { font-family:'Oxanium',monospace;font-size:22px;font-weight:700; }
+
+/* Chart */
+.ctitle { font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px; }
+.cbars { display:flex;align-items:flex-end;gap:5px;height:80px; }
+.ccol { flex:1;display:flex;flex-direction:column;align-items:center;gap:2px; }
+.ccol .amt { font-family:'Oxanium',monospace;font-size:9px;color:var(--gold);font-weight:600; }
+.ccol .bwrap { width:100%;display:flex;align-items:flex-end;height:52px; }
+.ccol .bar { width:100%;border-radius:3px 3px 0 0;min-height:3px; }
+.bf { background:linear-gradient(180deg,#34d399,#059669); }
+.bu { background:linear-gradient(180deg,#fca5a5,#ef4444);opacity:.7; }
+.bp { background:linear-gradient(180deg,#fcd34d,#d97706);opacity:.6; }
+.ccol .yr { font-family:'Oxanium',monospace;font-size:9px;color:var(--muted); }
+
+/* Table card */
+.tcard { background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px; }
+.thead-wrap { padding:16px 20px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px; }
+.ttitle { font-weight:700;font-size:14px; }
+.tsub { font-size:12px;color:var(--muted); }
+.tscroll { overflow-x:auto; }
+table { width:100%;border-collapse:collapse; }
+thead { background:#f9fafb; }
+th { padding:9px 12px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.7px;text-transform:uppercase;color:var(--sub);white-space:nowrap;border-bottom:1px solid var(--border); }
+td { padding:10px 12px;border-bottom:1px solid #f3f4f6;font-size:12px;white-space:nowrap;vertical-align:middle; }
+tbody tr:last-child td { border-bottom:none; }
+tbody tr:hover { background:#f9fafb; }
+
+/* Cell styles */
+.cy  { font-family:'Oxanium',monospace;font-weight:700;font-size:14px; }
+.cd  { font-family:'Oxanium',monospace;font-weight:700;font-size:14px;color:var(--gold); }
+.cdt { font-family:'Oxanium',monospace;font-size:12px;color:var(--sub); }
+.cp  { font-family:'Oxanium',monospace;font-size:12px;font-weight:600; }
+.cp-ex   { color:#b45309; }
+.cp-fill { color:var(--green); }
+.ceps { font-family:'Oxanium',monospace;font-size:13px;font-weight:600;color:#4f46e5; }
+.cpr  { font-family:'Oxanium',monospace;font-size:13px;font-weight:700; }
+.pr-high { color:var(--green); }   /* yield >= 5% */
+.pr-mid  { color:var(--warn); }    /* 3~5% */
+.pr-low  { color:var(--sub); }     /* < 3% */
+
+/* Badges */
+.badge { display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700; }
+.bf2  { background:#d1fae5;color:#065f46; }
+.bnf  { background:#fee2e2;color:#991b1b; }
+.bpd  { background:#fef3c7;color:#92400e; }
+.bno  { background:#f3f4f6;color:var(--muted); }
+
+/* Days */
+.df { font-family:'Oxanium',monospace;color:var(--green);font-weight:700; }
+.dm { font-family:'Oxanium',monospace;color:var(--warn);font-weight:600; }
+.ds { font-family:'Oxanium',monospace;color:var(--sub); }
+
+.tbar { display:inline-block;height:6px;border-radius:3px;background:var(--accent);opacity:.25;vertical-align:middle; }
+
+/* Column group bg */
+.g-ex   { background:#fffbeb; }
+.g-fill { background:#f0fdf4; }
+.g-fin  { background:#f5f3ff; }
+.bl-ex   { border-left:2px solid #fde68a !important; }
+.bl-fill { border-left:2px solid #bbf7d0 !important; }
+.bl-fin  { border-left:2px solid #c4b5fd !important; }
+
+.footer { text-align:center;font-size:12px;color:var(--muted);margin-top:32px;line-height:2; }
+.footer a { color:var(--accent);text-decoration:none; }
+
+/* ── 手機版優化 ── */
+@media(max-width:680px){
+  .app { padding:16px 12px 100px; }
+  .header h1 { font-size:18px; }
+  .header p { font-size:12px; }
+  .hicon { width:38px;height:38px;font-size:19px; }
+
+  /* 搜尋列全寬 */
+  .sinp { max-width:100%;font-size:20px;padding:14px 16px; }
+  .sbtn { padding:14px 20px;font-size:15px; }
+  .search-row { flex-wrap:nowrap; }
+
+  /* KPI 改兩欄網格 */
+  .sum-top { flex-direction:column; gap:12px; }
+  .kpis { display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; }
+  .kpi { text-align:left; background:#f9fafb; border-radius:8px; padding:10px 12px; }
+  .klbl { font-size:10px; }
+  .kval { font-size:18px; }
+
+  /* 股票名稱區 */
+  .sid { font-size:26px; }
+  .snm { font-size:14px; }
+
+  /* 表格捲動提示 */
+  .tscroll { -webkit-overflow-scrolling:touch; }
+  .tscroll::after {
+    content:'← 左右滑動查看更多 →';
+    display:block; text-align:center;
+    font-size:11px; color:var(--muted);
+    padding:6px 0 2px;
+  }
+  th,td { padding:8px 9px; font-size:11px; }
+  .cy { font-size:13px; }
+  .cd { font-size:13px; }
+
+  /* 即將除息卡片 */
+  .upcoming-item { min-width:80px; padding:7px 10px; }
+  .ui-code { font-size:14px; }
+  .ui-name { font-size:10px; }
+  .ui-date { font-size:10px; }
+  .ui-days { font-size:9px; }
+
+  /* 底部固定搜尋列（手機體驗） */
+  .sticky-search {
+    position:fixed; bottom:0; left:0; right:0;
+    background:var(--panel);
+    border-top:1px solid var(--border);
+    padding:10px 16px;
+    padding-bottom:calc(10px + env(safe-area-inset-bottom));
+    display:flex; gap:8px;
+    box-shadow:0 -4px 16px rgba(0,0,0,.08);
+    z-index:100;
+  }
+  .sticky-search input {
+    flex:1; border:2px solid var(--border); border-radius:var(--rs);
+    padding:11px 14px; font-size:18px;
+    font-family:'Oxanium',monospace; font-weight:600;
+    letter-spacing:3px; color:var(--text); outline:none;
+  }
+  .sticky-search input:focus { border-color:var(--accent); }
+  .sticky-search button {
+    background:var(--accent); color:#fff; border:none;
+    border-radius:var(--rs); padding:11px 18px;
+    font-size:15px; font-weight:700; cursor:pointer;
+  }
+  /* 隱藏原本搜尋卡片的輸入列 */
+  .search-row { display:none; }
+}
+
+/* 寬螢幕維持原樣 */
+@media(min-width:681px){
+  .sticky-search { display:none; }
+}
+
+/* ── 即將除息卡片 ── */
+.upcoming-card {
+  background: var(--panel);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+  animation: fadeUp .4s ease;
+}
+.upcoming-header {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+  margin-bottom: 14px; padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.upcoming-title { font-weight: 700; font-size: 14px; }
+.upcoming-sub { font-size: 12px; color: var(--muted); }
+.upcoming-list {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.upcoming-item {
+  display: flex; flex-direction: column; align-items: center;
+  background: #f9fafb; border: 1.5px solid var(--border);
+  border-radius: var(--rs); padding: 8px 14px;
+  cursor: pointer; transition: all .15s; min-width: 90px;
+}
+.upcoming-item:hover {
+  border-color: var(--accent); background: var(--tag-bg);
+}
+.upcoming-item .ui-code {
+  font-family: 'Oxanium', monospace; font-weight: 700;
+  font-size: 15px; color: var(--accent);
+}
+.upcoming-item .ui-name {
+  font-size: 11px; color: var(--sub); margin: 2px 0;
+}
+.upcoming-item .ui-date {
+  font-family: 'Oxanium', monospace; font-size: 11px;
+  color: var(--red); font-weight: 600;
+}
+.upcoming-item .ui-days {
+  font-size: 10px; color: var(--muted); margin-top: 1px;
+}
+.upcoming-loading {
+  color: var(--muted); font-size: 13px; padding: 8px 0;
+  font-family: 'Oxanium', monospace;
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="hicon">📊</div>
+    <div>
+      <h1>台股股利查詢</h1>
+      <p>現金股利・殖利率・EPS・除息填息一覽</p>
+    </div>
+  </div>
+
+  <div class="notice">
+    <span>💡</span>
+    <span>資料來源：<a href="https://finmindtrade.com" target="_blank">FinMind</a>，免費每小時 300 次。iPhone 用戶可點 Safari 分享 → <strong>加入主畫面</strong>，當成 App 使用。</span>
+  </div>
+
+  <div class="search-card">
+    <div class="search-row">
+      <input class="sinp" id="inp" type="text" maxlength="6" placeholder="如 2330" autocomplete="off"/>
+      <button class="sbtn" id="btn" onclick="doSearch()">查　詢</button>
+    </div>
+    <div class="qlabel">熱門股票</div>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <!-- 即將除息卡片 -->
+  <div class="upcoming-card" id="upcomingCard" style="display:none">
+    <div class="upcoming-header">
+      <div class="upcoming-title">📅 未來 15 天即將除息</div>
+      <div class="upcoming-sub" id="upcomingSub"></div>
+    </div>
+    <div id="upcomingList" class="upcoming-list"></div>
+  </div>
+
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <div class="ltxt">正在查詢資料，請稍候…</div>
+    <div class="lstep" id="lstep"></div>
+  </div>
+
+  <div class="errc" id="errc">
+    <div class="errt" id="errt"></div>
+    <div class="errb" id="errb"></div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="sum-card">
+      <div class="sum-top">
+        <div>
+          <div class="sid" id="rCode"></div>
+          <div class="snm" id="rName"></div>
+        </div>
+        <div class="kpis">
+          <div class="kpi">
+            <div class="klbl">近5年均股利</div>
+            <div class="kval" id="kAvg" style="color:var(--gold)">—</div>
+          </div>
+          <div class="kpi">
+            <div class="klbl">近5年均殖利率</div>
+            <div class="kval" id="kYield" style="color:var(--green)">—</div>
+          </div>
+          <div class="kpi">
+            <div class="klbl">近5年均EPS</div>
+            <div class="kval" id="kEps" style="color:#4f46e5">—</div>
+          </div>
+          <div class="kpi">
+            <div class="klbl">填息率</div>
+            <div class="kval" id="kFill" style="color:var(--green)">—</div>
+          </div>
+          <div class="kpi">
+            <div class="klbl">均填息天數</div>
+            <div class="kval" id="kDays" style="color:var(--sub)">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="ctitle">歷年現金股利（綠=已填息　紅=未填息　黃=待除息）</div>
+      <div class="cbars" id="cbars"></div>
+    </div>
+
+    <div class="tcard">
+      <div class="thead-wrap">
+        <div class="ttitle">歷年完整明細</div>
+        <div class="tsub" id="tsub"></div>
+      </div>
+      <div class="tscroll">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2">年度</th>
+              <th rowspan="2" style="background:#fffbeb;border-left:2px solid #fde68a">現金股利</th>
+              <th rowspan="2" style="background:#fffbeb">現金發放日</th>
+              <th rowspan="2" style="background:#f0fdf4;border-left:2px solid #bbf7d0">股票股利</th>
+              <th colspan="2" class="g-ex"  style="text-align:center;border-left:2px solid #fed7aa">— 除　息 —</th>
+              <th colspan="2" class="g-fill" style="text-align:center">— 填　息 —</th>
+              <th rowspan="2">填息天數</th>
+              <th colspan="2" class="g-fin"  style="text-align:center">— 財務指標 —</th>
+              <th rowspan="2">狀態</th>
+              <th rowspan="2">趨勢</th>
+            </tr>
+            <tr>
+              <th class="g-ex" style="border-left:2px solid #fed7aa">日期</th>
+              <th class="g-ex">除息前收盤</th>
+              <th class="g-fill bl-fill">日期</th>
+              <th class="g-fill">填息日收盤</th>
+              <th class="g-fin bl-fin">殖利率</th>
+              <th class="g-fin">EPS</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 手機底部固定搜尋列 -->
+  <div class="sticky-search" id="stickySearch">
+    <input type="text" id="inp2" maxlength="6" placeholder="輸入代號" autocomplete="off"/>
+    <button onclick="qs2()">查詢</button>
+  </div>
+
+  <div class="footer">
+    資料來源：<a href="https://finmindtrade.com" target="_blank">FinMind</a>（TaiwanStockDividend・TaiwanStockDividendResult・TaiwanStockPrice・TaiwanStockFinancialStatements）<br>
+    殖利率 = 現金股利 ÷ 除息前收盤價　EPS 取當年度財報　※ 僅供參考，不構成投資建議
+  </div>
+</div>
+
+<script>
+const STOCKS = [
+  {c:'2330',n:'台積電'},{c:'2454',n:'聯發科'},{c:'2412',n:'中華電'},
+  {c:'0050',n:'台灣50'},{c:'0056',n:'高股息'},{c:'2882',n:'國泰金'},
+  {c:'2317',n:'鴻海'}, {c:'1301',n:'台塑'}, {c:'5880',n:'合庫金'},
+  {c:'2002',n:'中鋼'}, {c:'2881',n:'富邦金'},{c:'2886',n:'兆豐金'},
+];
+document.getElementById('chips').innerHTML = STOCKS.map(s =>
+  `<button class="chip" onclick="qs('${s.c}')">${s.c} ${s.n}</button>`
+).join('');
+function qs(c){ document.getElementById('inp').value=c; doSearch(); }
+document.getElementById('inp').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
+
+// ── 即將除息（頁面載入時自動執行）──
+async function loadUpcoming(){
+  const card = document.getElementById('upcomingCard');
+  const list = document.getElementById('upcomingList');
+  const sub  = document.getElementById('upcomingSub');
+  list.innerHTML = '<div class="upcoming-loading">載入中...</div>';
+  card.style.display = 'block';
+
+  const today = new Date();
+  const fmt = d => d.toISOString().slice(0,10);
+  const todayStr = fmt(today);
+  const end15 = new Date(today); end15.setDate(today.getDate()+15);
+  const endStr = fmt(end15);
+
+  // FinMind 全市場查詢：TaiwanStockDividend 需帶 start_date + end_date 才允許 CORS
+  // 用稍早一點的 start_date 確保能抓到資料（有些股票除息日在 date 欄位）
+  const monthAgo = new Date(today); monthAgo.setDate(today.getDate()-30);
+  const startStr = fmt(monthAgo);
+
+  // 嘗試兩個 endpoint：先試帶 end_date，若失敗改用 TaiwanStockDividendResult
+  let data = [];
+  let success = false;
+
+  // 方法一：TaiwanStockDividend 帶 start+end date（全市場）
+  try {
+    const url = `${BASE}?dataset=TaiwanStockDividend&start_date=${startStr}&end_date=${endStr}`;
+    const r = await fetch(url);
+    if(r.ok){
+      const j = await r.json();
+      if(j.status===200 && j.data?.length){
+        data = j.data;
+        success = true;
+      }
+    }
+  } catch(e){}
+
+  // 方法二：TaiwanStockDividendResult 帶 start_date（除息結果，包含除息日）
+  if(!success){
+    try {
+      const url = `${BASE}?dataset=TaiwanStockDividendResult&start_date=${todayStr}&end_date=${endStr}`;
+      const r = await fetch(url);
+      if(r.ok){
+        const j = await r.json();
+        if(j.status===200 && j.data?.length){
+          // DividendResult 的 date 欄位即除息日
+          data = j.data.map(d=>({
+            stock_id: d.stock_id,
+            stock_name: d.stock_name||d.stock_id,
+            CashExDividendTradingDate: d.date||'',
+            CashEarningsDistribution: d.stock_and_cache_dividend||0,
+            CashStatutorySurplus: 0,
+            StockEarningsDistribution: 0,
+            StockStatutorySurplus: 0,
+          }));
+          success = true;
+        }
+      }
+    } catch(e){}
+  }
+
+  if(!success || !data.length){
+    list.innerHTML = '<div class="upcoming-loading" style="color:var(--sub)">⚠ 無法載入（需在電腦瀏覽器開啟此檔案）</div>';
+    sub.textContent = `${todayStr} ～ ${endStr}`;
+    return;
+  }
+
+  // 篩出除息日在今天～15天內的股票
+  const items = data
+    .map(d=>({
+      code:   d.stock_id,
+      name:   d.stock_name||d.stock_id,
+      exDate: d.CashExDividendTradingDate||d.StockExDividendTradingDate||'',
+      cash:   (parseFloat(d.CashEarningsDistribution)||0)+(parseFloat(d.CashStatutorySurplus)||0),
+      stock:  (parseFloat(d.StockEarningsDistribution)||0)+(parseFloat(d.StockStatutorySurplus)||0),
+    }))
+    .filter(d => d.exDate >= todayStr && d.exDate <= endStr)
+    .sort((a,b) => a.exDate.localeCompare(b.exDate));
+
+  // 去重
+  const seen = new Set();
+  const unique = items.filter(d=>{ if(seen.has(d.code)) return false; seen.add(d.code); return true; });
+
+  if(!unique.length){
+    list.innerHTML = '<div class="upcoming-loading" style="color:var(--muted)">未來 15 天無除息股票</div>';
+    sub.textContent = `${todayStr} ～ ${endStr}`;
+    return;
+  }
+
+  sub.textContent = `${todayStr} ～ ${endStr}　共 ${unique.length} 支`;
+  list.innerHTML = unique.map(d=>{
+    const diff = Math.round((new Date(d.exDate)-today)/86400000);
+    const dayLabel = diff===0?'今天！':diff===1?'明天':`${diff}天後`;
+    const divLabel = d.cash>0&&d.stock>0 ? `現$${d.cash.toFixed(1)}+股$${d.stock.toFixed(1)}`
+                   : d.cash>0 ? `$${d.cash.toFixed(2)}`
+                   : d.stock>0 ? `股$${d.stock.toFixed(2)}` : '';
+    return `<div class="upcoming-item" onclick="qs('${d.code}')">
+      <div class="ui-code">${d.code}</div>
+      <div class="ui-name">${d.name.slice(0,6)}</div>
+      <div class="ui-date">${d.exDate}</div>
+      <div class="ui-days">${dayLabel}${divLabel?' · '+divLabel:''}</div>
+    </div>`;
+  }).join('');
+}
+window.addEventListener('DOMContentLoaded', loadUpcoming);
+
+// 手機底部搜尋列
+function qs2(){
+  const v = document.getElementById('inp2').value.trim();
+  if(!v) return;
+  document.getElementById('inp').value = v;
+  doSearch();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.getElementById('inp2')?.addEventListener('keydown', e=>{
+  if(e.key==='Enter') qs2();
+});
+
+function setLoading(v,s){
+  document.getElementById('loading').className='loading'+(v?' show':'');
+  document.getElementById('btn').disabled=v;
+  if(s) document.getElementById('lstep').textContent=s;
+}
+function hideAll(){
+  document.getElementById('result').className='result';
+  document.getElementById('errc').className='errc';
+}
+function showErr(t,b){
+  document.getElementById('errt').textContent=t;
+  document.getElementById('errb').innerHTML=b;
+  document.getElementById('errc').className='errc show';
+}
+
+const BASE='https://api.finmindtrade.com/api/v4/data';
+async function fm(dataset,id,start){
+  const url=`${BASE}?dataset=${dataset}&data_id=${encodeURIComponent(id)}&start_date=${start}`;
+  const r=await fetch(url);
+  if(!r.ok) throw new Error(`HTTP ${r.status}`);
+  const j=await r.json();
+  if(j.status!==200) throw new Error(j.msg||`status=${j.status}`);
+  return j.data||[];
+}
+
+async function doSearch(){
+  const code=document.getElementById('inp').value.trim();
+  if(!code) return;
+  setLoading(true,'① 查詢股利政策…');
+  hideAll();
+
+  try {
+    const start='2010-01-01';
+
+    // ① 股利政策
+    let divData;
+    try{ divData=await fm('TaiwanStockDividend',code,start); }
+    catch(e){ throw new Error('股利資料失敗：'+e.message); }
+
+    if(!divData.length){
+      showErr(`查無股票「${code}」`,'請確認代號是否正確。');
+      setLoading(false); return;
+    }
+
+    // 合併現金＋股票股利，只要其中一項 > 0 就顯示
+    const allRows = divData
+      .map(d=>({
+        year:         d.year||(d.CashExDividendTradingDate||d.StockExDividendTradingDate||d.date||'').slice(0,4),
+        name:         d.stock_name||code,
+        cashDiv:      (parseFloat(d.CashEarningsDistribution)||0)+(parseFloat(d.CashStatutorySurplus)||0),
+        stockDiv:     (parseFloat(d.StockEarningsDistribution)||0)+(parseFloat(d.StockStatutorySurplus)||0),
+        exDate:       d.CashExDividendTradingDate||'',
+        stockExDate:  d.StockExDividendTradingDate||'',
+        cashPayDate:  d.CashDividendPaymentDate||'',    // 現金股利發放日（FinMind 欄位）
+      }))
+      .filter(d=>d.cashDiv>0||d.stockDiv>0)
+      .sort((a,b)=>{
+        const da=a.exDate||a.stockExDate||'';
+        const db=b.exDate||b.stockExDate||'';
+        return db.localeCompare(da);
+      });
+    const rows = allRows;
+
+    if(!rows.length){
+      showErr(`「${code}」無現金股利記錄`,'此股票可能僅配股票股利或不配息。');
+      setLoading(false); return;
+    }
+
+    // ② 除息結果
+    setLoading(true,'② 查詢除息前後價格…');
+    let resData=[];
+    try{ resData=await fm('TaiwanStockDividendResult',code,start); }catch(e){}
+    const resMap={};
+    resData.forEach(r=>{ if(r.date) resMap[r.date]=r; });
+
+    // ③ 每日股價（計算填息）
+    setLoading(true,'③ 查詢每日股價…');
+    const oldEx=rows[rows.length-1]?.exDate||start;
+    let prices=[];
+    try{
+      const raw=await fm('TaiwanStockPrice',code,oldEx);
+      prices=raw.map(p=>({date:p.date,close:parseFloat(p.close)||0}));
+    }catch(e){}
+    const priceMap={};
+    prices.forEach(p=>{priceMap[p.date]=p.close;});
+    const priceDates=Object.keys(priceMap).sort();
+
+    // ④ EPS（綜合損益表）
+    setLoading(true,'④ 查詢 EPS 財報數據…');
+    let epsMap={};
+    try{
+      const fsData=await fm('TaiwanStockFinancialStatements',code,start);
+      console.log('[EPS] 財報總筆數:', fsData.length);
+      if(fsData.length>0){
+        const allTypes=[...new Set(fsData.map(d=>d.type))];
+        console.log('[EPS] 所有 type 值:', allTypes);
+        console.log('[EPS] 前3筆原始:', JSON.stringify(fsData.slice(0,3)));
+      }
+      // 篩選 EPS 欄位（type 或 origin_name 任一符合）
+      const epsRows=fsData.filter(d=>{
+        const t=(d.type||'').toUpperCase();
+        const o=(d.origin_name||'');
+        // 盡可能廣泛匹配 EPS 欄位
+        return t==='EPS'||t==='BASICEPS'||t==='BASIC_EPS'||t==='DILUTEDEPS'||
+               o.includes('每股盈餘')||o.includes('每股淨利');
+      });
+      console.log('[EPS] 篩出EPS筆數:', epsRows.length, epsRows.slice(0,4));
+      // 每年取日期最大那筆（= Q4 累計全年數字）
+      const tmp={};
+      epsRows.forEach(d=>{
+        const y=d.date.slice(0,4);
+        const v=parseFloat(d.value);
+        if(!isNaN(v)&&(!tmp[y]||d.date>tmp[y].date)) tmp[y]={date:d.date,value:v};
+      });
+      Object.keys(tmp).forEach(y=>{ epsMap[y]=tmp[y].value; });
+      console.log('[EPS] 最終 epsMap:', JSON.stringify(epsMap));
+    }catch(e){ console.warn('[EPS] 查詢失敗:',e.message); }
+
+    // ⑤ 組合
+    const today=new Date().toISOString().slice(0,10);
+    const final=rows.map(row=>{
+      const res=resMap[row.exDate]||{};
+      const beforePrice=parseFloat(res.before_price)||0;
+      const isPending=!row.exDate||row.exDate>today;
+      let fillDate=null,fillDays=null,filled=false,fillClose=null;
+
+      if(!isPending&&beforePrice>0&&prices.length){
+        for(const d of priceDates.filter(d=>d>row.exDate)){
+          const c=priceMap[d]||0;
+          if(c>=beforePrice){
+            fillDate=d;
+            fillDays=Math.round((new Date(d)-new Date(row.exDate))/86400000);
+            fillClose=c;
+            filled=true;
+            break;
+          }
+        }
+      }
+
+      // 殖利率 = 現金股利 / 除息前收盤價
+      const yld = beforePrice>0 ? (row.cashDiv/beforePrice*100) : null;
+      const eps = (row.year in epsMap) ? epsMap[row.year] : null;
+
+      return {...row,beforePrice,isPending,fillDate,fillDays,fillClose,filled,yld,eps};
+    });
+
+    setLoading(false);
+    render(code,final);
+
+  } catch(e){
+    setLoading(false);
+    showErr('查詢失敗',`${e.message}<br><br>
+      可能原因：<br>
+      • 須用<strong>電腦瀏覽器</strong>開啟此 HTML（不能在 Claude.ai 裡使用）<br>
+      • 網路未連線<br>
+      • FinMind 每小時 300 次限制，請稍後再試`);
+  }
+}
+
+function render(code,rows){
+  document.getElementById('rCode').textContent=code;
+  document.getElementById('rName').textContent=rows[0]?.name||'';
+  document.getElementById('tsub').textContent=`共 ${rows.length} 筆`;
+
+  const today=new Date().toISOString().slice(0,10);
+  const hasPast=rows.filter(r=>r.exDate&&r.exDate<=today);
+  const filled=hasPast.filter(r=>r.filled);
+
+  // KPI: 近5年
+  const r5=rows.filter(r=>r.cashDiv>0).slice(0,5);
+  const avg5=r5.length?(r5.reduce((s,r)=>s+r.cashDiv,0)/r5.length).toFixed(2):null;
+  document.getElementById('kAvg').textContent=avg5?`$${avg5}`:'—';
+
+  const ylds=r5.filter(r=>r.yld!=null).map(r=>r.yld);
+  const avgYld=ylds.length?(ylds.reduce((a,b)=>a+b,0)/ylds.length).toFixed(2):null;
+  document.getElementById('kYield').textContent=avgYld?`${avgYld}%`:'—';
+
+  const epsList=r5.filter(r=>r.eps!=null).map(r=>r.eps);
+  const avgEps=epsList.length?(epsList.reduce((a,b)=>a+b,0)/epsList.length).toFixed(2):null;
+  document.getElementById('kEps').textContent=avgEps?`$${avgEps}`:'—';
+
+  document.getElementById('kFill').textContent=hasPast.length?Math.round(filled.length/hasPast.length*100)+'%':'—';
+  const fd=filled.filter(r=>r.fillDays!=null);
+  document.getElementById('kDays').textContent=fd.length?Math.round(fd.reduce((s,r)=>s+r.fillDays,0)/fd.length)+' 天':'—';
+
+  // Chart
+  const cr=rows.slice(0,12).reverse();
+  const maxD=Math.max(...cr.map(r=>(r.cashDiv||0)+(r.stockDiv||0)),0.01);
+  document.getElementById('cbars').innerHTML=cr.map(r=>{
+    const total=(r.cashDiv||0)+(r.stockDiv||0);
+    const h=Math.max(4,Math.round((total/maxD)*52));
+    const cls=r.isPending?'bp':r.filled?'bf':'bu';
+    return `<div class="ccol">
+      <div class="amt">${((r.cashDiv||0)+(r.stockDiv||0)).toFixed(1)}</div>
+      <div class="bwrap"><div class="bar ${cls}" style="height:${h}px"></div></div>
+      <div class="yr">${(r.year||'').slice(2)}</div>
+    </div>`;
+  }).join('');
+
+  // Table
+  const maxD2=Math.max(...rows.map(r=>r.cashDiv||0),0.01);
+  // 表格總數也要含股票股利列
+  document.getElementById('tbody').innerHTML=rows.map(r=>{
+    const exDate=r.exDate||'—';
+    let badge,fillDaysTxt='—',fillDateTxt='—',fillPriceTxt='—';
+
+    const exPriceTxt=r.beforePrice>0
+      ?`<span class="cp cp-ex">$${r.beforePrice.toFixed(2)}</span>`
+      :'<span style="color:var(--muted)">—</span>';
+
+    if(r.isPending||!r.exDate){
+      badge=`<span class="badge bpd">⏳ 待除息</span>`;
+    } else if(r.filled&&r.fillDate){
+      fillDateTxt=r.fillDate;
+      fillPriceTxt=r.fillClose?`<span class="cp cp-fill">$${r.fillClose.toFixed(2)}</span>`:'—';
+      const d=r.fillDays||0;
+      const cls=d<=10?'df':d<=60?'dm':'ds';
+      fillDaysTxt=`<span class="${cls}">${d} 天</span>`;
+      badge=`<span class="badge bf2">✅ 已填息</span>`;
+    } else if(r.beforePrice>0){
+      badge=`<span class="badge bnf">❌ 未填息</span>`;
+    } else {
+      badge=`<span class="badge bno">— 無資料</span>`;
+    }
+
+    // 殖利率
+    let yldTxt='—';
+    if(r.yld!=null){
+      const cls=r.yld>=5?'pr-high':r.yld>=3?'pr-mid':'pr-low';
+      yldTxt=`<span class="cpr ${cls}">${r.yld.toFixed(2)}%</span>`;
+    }
+
+    // EPS
+    const epsTxt=r.eps!=null
+      ?`<span class="ceps">${r.eps>0?'+':''}${r.eps.toFixed(2)}</span>`
+      :'<span style="color:var(--muted)">—</span>';
+
+    // 股票股利（元/股）
+    const stockDivTxt = r.stockDiv>0
+      ? `<span style="font-family:'Oxanium',monospace;font-weight:700;font-size:14px;color:#7c3aed">$${r.stockDiv.toFixed(2)}</span>`
+      : '<span style="color:var(--muted)">—</span>';
+
+    // 發放日格式化
+    const cashPayTxt  = r.cashPayDate  ? `<span class="cdt" style="color:#b45309">${r.cashPayDate}</span>`  : '<span style="color:var(--muted)">—</span>';
+
+    const bw=Math.round(((r.cashDiv||0)/maxD2)*56);
+    return `<tr>
+      <td class="cy">${r.year||'—'}</td>
+      <td class="cd" style="border-left:2px solid #fde68a;background:#fffbeb">${r.cashDiv>0?'$'+r.cashDiv.toFixed(2):'—'}</td>
+      <td style="background:#fffbeb">${cashPayTxt}</td>
+      <td style="background:#f0fdf4;border-left:2px solid #bbf7d0">${stockDivTxt}</td>
+      <td class="cdt g-ex" style="border-left:2px solid #fed7aa">${exDate}</td>
+      <td class="g-ex">${exPriceTxt}</td>
+      <td class="cdt bl-fill g-fill">${fillDateTxt}</td>
+      <td class="g-fill">${fillPriceTxt}</td>
+      <td>${fillDaysTxt}</td>
+      <td class="bl-fin g-fin">${yldTxt}</td>
+      <td class="g-fin">${epsTxt}</td>
+      <td>${badge}</td>
+      <td><span class="tbar" style="width:${bw}px"></span></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('result').className='result show';
+}
+</script>
+</body>
+</html>
