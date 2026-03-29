@@ -420,9 +420,15 @@ async function doSearch(){
     // 合併現金＋股票股利，只要其中一項 > 0 就顯示
     const allRows = divData
       .map(d=>({
-        year:         (d.year||'').trim() ||
-                        (d.CashExDividendTradingDate||d.StockExDividendTradingDate||'').slice(0,4) ||
-                        (d.AnnouncementDate||d.date||'').slice(0,4),  // 公告日年份作最後 fallback
+        year: (()=>{
+                  const raw = (d.year||'').trim();
+                  const fromDate = (d.CashExDividendTradingDate||d.StockExDividendTradingDate||'').slice(0,4);
+                  const fromAnn  = (d.AnnouncementDate||d.date||'').slice(0,4);
+                  const y = raw || fromDate || fromAnn || '';
+                  if(!y) return '';
+                  const n = parseInt(y);
+                  return (n > 0 && n < 200) ? (n + 1911).toString() : y;
+                })(),
         name:         d.stock_name||code,
         cashDiv:      (parseFloat(d.CashEarningsDistribution)||0)+(parseFloat(d.CashStatutorySurplus)||0),
         stockDiv:     (parseFloat(d.StockEarningsDistribution)||0)+(parseFloat(d.StockStatutorySurplus)||0),
@@ -640,7 +646,7 @@ function render(code,rows,prices=[]){
           : `<div class="fp-track">${pct > 8 ? `<div class="fp-fill" style="width:${pct}%;background:${barBg}"><span>${pct}%</span></div>` : `<div style="width:${pct}%;height:100%;background:${barBg};border-radius:6px;position:absolute"></div><div class="fp-ghost">${pct}%</div>`}</div>`;
 
         return `<div class="fp-row">
-          <div class="fp-yr">${(r.year||'').slice(2)}</div>
+          <div class="fp-yr">${r.year||'—'}</div>
           ${track}
           ${metaHtml}
         </div>`;
