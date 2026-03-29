@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="股利查詢">
+<meta name="apple-mobile-web-app-title" content="股利除息查詢">
 <meta name="theme-color" content="#1a56db">
-<title>台股股利查詢</title>
+<title>台股股利除息查詢工具 v1.0</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Oxanium:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -109,7 +109,7 @@ tbody tr:hover { background:#f9fafb; }
 .cp  { font-family:'Oxanium',monospace;font-size:12px;font-weight:600; }
 .cp-ex   { color:#b45309; }
 .cp-fill { color:var(--green); }
-.ceps { font-family:'Oxanium',monospace;font-size:13px;font-weight:600;color:#4f46e5; }
+
 .cpr  { font-family:'Oxanium',monospace;font-size:13px;font-weight:700; }
 .pr-high { color:var(--green); }   /* yield >= 5% */
 .pr-mid  { color:var(--warn); }    /* 3~5% */
@@ -176,7 +176,6 @@ tbody tr:hover { background:#f9fafb; }
   .cd { font-size:13px; }
 
   /* 即將除息卡片 */
-  .upcoming-item { min-width:80px; padding:7px 10px; }
   .ui-code { font-size:14px; }
   .ui-name { font-size:10px; }
   .ui-date { font-size:10px; }
@@ -214,53 +213,16 @@ tbody tr:hover { background:#f9fafb; }
   .sticky-search { display:none; }
 }
 
-/* ── 即將除息卡片 ── */
-.upcoming-card {
-  background: var(--panel);
-  border-radius: var(--r);
-  box-shadow: var(--shadow);
-  padding: 18px 20px;
-  margin-bottom: 16px;
-  animation: fadeUp .4s ease;
-}
-.upcoming-header {
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 8px;
-  margin-bottom: 14px; padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-.upcoming-title { font-weight: 700; font-size: 14px; }
-.upcoming-sub { font-size: 12px; color: var(--muted); }
-.upcoming-list {
-  display: flex; flex-wrap: wrap; gap: 8px;
-}
-.upcoming-item {
-  display: flex; flex-direction: column; align-items: center;
-  background: #f9fafb; border: 1.5px solid var(--border);
-  border-radius: var(--rs); padding: 8px 14px;
-  cursor: pointer; transition: all .15s; min-width: 90px;
-}
-.upcoming-item:hover {
-  border-color: var(--accent); background: var(--tag-bg);
-}
-.upcoming-item .ui-code {
-  font-family: 'Oxanium', monospace; font-weight: 700;
-  font-size: 15px; color: var(--accent);
-}
-.upcoming-item .ui-name {
-  font-size: 11px; color: var(--sub); margin: 2px 0;
-}
-.upcoming-item .ui-date {
-  font-family: 'Oxanium', monospace; font-size: 11px;
-  color: var(--red); font-weight: 600;
-}
-.upcoming-item .ui-days {
-  font-size: 10px; color: var(--muted); margin-top: 1px;
-}
-.upcoming-loading {
-  color: var(--muted); font-size: 13px; padding: 8px 0;
-  font-family: 'Oxanium', monospace;
-}
+
+/* ── 填息橫條 ── */
+.fp-list{display:flex;flex-direction:column;gap:7px;margin-top:4px}
+.fp-row{display:grid;grid-template-columns:42px 1fr 72px;align-items:center;gap:8px;font-size:12px}
+.fp-yr{font-family:'Oxanium',monospace;font-weight:700;font-size:13px;color:var(--sub);text-align:right}
+.fp-track{background:#f3f4f6;border-radius:6px;height:22px;position:relative;overflow:hidden}
+.fp-fill{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;min-width:2px}
+.fp-fill span{font-family:'Oxanium',monospace;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+.fp-ghost{position:absolute;inset:0;display:flex;align-items:center;padding-left:8px;font-size:10px;color:var(--muted);font-family:'Oxanium',monospace}
+.fp-meta{font-family:'Oxanium',monospace;font-size:11px;text-align:right;line-height:1.4}
 </style>
 </head>
 <body>
@@ -269,14 +231,14 @@ tbody tr:hover { background:#f9fafb; }
   <div class="header">
     <div class="hicon">📊</div>
     <div>
-      <h1>台股股利查詢</h1>
-      <p>現金股利・殖利率・EPS・除息填息一覽</p>
+      <h1>台股股利除息查詢工具</h1>
+      <p>現金股利・殖利率・除息填息一覽</p>
     </div>
   </div>
 
   <div class="notice">
     <span>💡</span>
-    <span>資料來源：<a href="https://finmindtrade.com" target="_blank">FinMind</a>，免費每小時 300 次。iPhone 用戶可點 Safari 分享 → <strong>加入主畫面</strong>，當成 App 使用。</span>
+    <span>資料來源：<a href="https://finmindtrade.com" target="_blank">FinMind</a>，免費每小時 300 次。iPhone 用戶可點 Safari 分享 → <strong>加入主畫面</strong>，當成 App 使用。免費工具，歡迎分享，請勿用於商業用途。</span>
   </div>
 
   <div class="search-card">
@@ -287,14 +249,7 @@ tbody tr:hover { background:#f9fafb; }
     <div class="qlabel">熱門股票</div>
     <div class="chips" id="chips"></div>
   </div>
-
-  <!-- 即將除息卡片 -->
-  <div class="upcoming-card" id="upcomingCard" style="display:none">
-    <div class="upcoming-header">
-      <div class="upcoming-title">📅 未來 15 天即將除息</div>
-      <div class="upcoming-sub" id="upcomingSub"></div>
     </div>
-    <div id="upcomingList" class="upcoming-list"></div>
   </div>
 
   <div class="loading" id="loading">
@@ -325,10 +280,6 @@ tbody tr:hover { background:#f9fafb; }
             <div class="kval" id="kYield" style="color:var(--green)">—</div>
           </div>
           <div class="kpi">
-            <div class="klbl">近5年均EPS</div>
-            <div class="kval" id="kEps" style="color:#4f46e5">—</div>
-          </div>
-          <div class="kpi">
             <div class="klbl">填息率</div>
             <div class="kval" id="kFill" style="color:var(--green)">—</div>
           </div>
@@ -338,8 +289,15 @@ tbody tr:hover { background:#f9fafb; }
           </div>
         </div>
       </div>
-      <div class="ctitle">歷年現金股利（綠=已填息　紅=未填息　黃=待除息）</div>
-      <div class="cbars" id="cbars"></div>
+
+      <!-- 今年預計配息區塊 -->
+      <div id="thisYearBox" style="display:none;margin-bottom:16px;padding:14px 16px;background:#fefce8;border:1.5px solid #fde68a;border-radius:8px;">
+        <div style="font-size:11px;color:#92400e;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">📅 今年配息狀況（2026）</div>
+        <div id="thisYearContent" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;"></div>
+      </div>
+
+      <div class="ctitle">近五年填息進度　<span id="rtPrice" style="font-family:'Oxanium',monospace;font-size:12px;color:var(--accent);font-weight:600;margin-left:8px"></span></div>
+      <div id="cbars"></div>
     </div>
 
     <div class="tcard">
@@ -358,7 +316,7 @@ tbody tr:hover { background:#f9fafb; }
               <th colspan="2" class="g-ex"  style="text-align:center;border-left:2px solid #fed7aa">— 除　息 —</th>
               <th colspan="2" class="g-fill" style="text-align:center">— 填　息 —</th>
               <th rowspan="2">填息天數</th>
-              <th colspan="2" class="g-fin"  style="text-align:center">— 財務指標 —</th>
+              <th rowspan="2" class="g-fin bl-fin">殖利率</th>
               <th rowspan="2">狀態</th>
               <th rowspan="2">趨勢</th>
             </tr>
@@ -367,8 +325,7 @@ tbody tr:hover { background:#f9fafb; }
               <th class="g-ex">除息前收盤</th>
               <th class="g-fill bl-fill">日期</th>
               <th class="g-fill">填息日收盤</th>
-              <th class="g-fin bl-fin">殖利率</th>
-              <th class="g-fin">EPS</th>
+              
             </tr>
           </thead>
           <tbody id="tbody"></tbody>
@@ -385,7 +342,7 @@ tbody tr:hover { background:#f9fafb; }
 
   <div class="footer">
     資料來源：<a href="https://finmindtrade.com" target="_blank">FinMind</a>（TaiwanStockDividend・TaiwanStockDividendResult・TaiwanStockPrice・TaiwanStockFinancialStatements）<br>
-    殖利率 = 現金股利 ÷ 除息前收盤價　EPS 取當年度財報　※ 僅供參考，不構成投資建議
+    殖利率 = 現金股利 ÷ 除息前收盤價　※ 僅供參考，不構成投資建議
   </div>
 </div>
 
@@ -402,110 +359,7 @@ document.getElementById('chips').innerHTML = STOCKS.map(s =>
 function qs(c){ document.getElementById('inp').value=c; doSearch(); }
 document.getElementById('inp').addEventListener('keydown', e=>{ if(e.key==='Enter') doSearch(); });
 
-// ── 即將除息（頁面載入時自動執行）──
-async function loadUpcoming(){
-  const card = document.getElementById('upcomingCard');
-  const list = document.getElementById('upcomingList');
-  const sub  = document.getElementById('upcomingSub');
-  list.innerHTML = '<div class="upcoming-loading">載入中...</div>';
-  card.style.display = 'block';
 
-  const today = new Date();
-  const fmt = d => d.toISOString().slice(0,10);
-  const todayStr = fmt(today);
-  const end15 = new Date(today); end15.setDate(today.getDate()+15);
-  const endStr = fmt(end15);
-
-  // FinMind 全市場查詢：TaiwanStockDividend 需帶 start_date + end_date 才允許 CORS
-  // 用稍早一點的 start_date 確保能抓到資料（有些股票除息日在 date 欄位）
-  const monthAgo = new Date(today); monthAgo.setDate(today.getDate()-30);
-  const startStr = fmt(monthAgo);
-
-  // 嘗試兩個 endpoint：先試帶 end_date，若失敗改用 TaiwanStockDividendResult
-  let data = [];
-  let success = false;
-
-  // 方法一：TaiwanStockDividend 帶 start+end date（全市場）
-  try {
-    const url = `${BASE}?dataset=TaiwanStockDividend&start_date=${startStr}&end_date=${endStr}`;
-    const r = await fetch(url);
-    if(r.ok){
-      const j = await r.json();
-      if(j.status===200 && j.data?.length){
-        data = j.data;
-        success = true;
-      }
-    }
-  } catch(e){}
-
-  // 方法二：TaiwanStockDividendResult 帶 start_date（除息結果，包含除息日）
-  if(!success){
-    try {
-      const url = `${BASE}?dataset=TaiwanStockDividendResult&start_date=${todayStr}&end_date=${endStr}`;
-      const r = await fetch(url);
-      if(r.ok){
-        const j = await r.json();
-        if(j.status===200 && j.data?.length){
-          // DividendResult 的 date 欄位即除息日
-          data = j.data.map(d=>({
-            stock_id: d.stock_id,
-            stock_name: d.stock_name||d.stock_id,
-            CashExDividendTradingDate: d.date||'',
-            CashEarningsDistribution: d.stock_and_cache_dividend||0,
-            CashStatutorySurplus: 0,
-            StockEarningsDistribution: 0,
-            StockStatutorySurplus: 0,
-          }));
-          success = true;
-        }
-      }
-    } catch(e){}
-  }
-
-  if(!success || !data.length){
-    list.innerHTML = '<div class="upcoming-loading" style="color:var(--sub)">⚠ 無法載入（需在電腦瀏覽器開啟此檔案）</div>';
-    sub.textContent = `${todayStr} ～ ${endStr}`;
-    return;
-  }
-
-  // 篩出除息日在今天～15天內的股票
-  const items = data
-    .map(d=>({
-      code:   d.stock_id,
-      name:   d.stock_name||d.stock_id,
-      exDate: d.CashExDividendTradingDate||d.StockExDividendTradingDate||'',
-      cash:   (parseFloat(d.CashEarningsDistribution)||0)+(parseFloat(d.CashStatutorySurplus)||0),
-      stock:  (parseFloat(d.StockEarningsDistribution)||0)+(parseFloat(d.StockStatutorySurplus)||0),
-    }))
-    .filter(d => d.exDate >= todayStr && d.exDate <= endStr)
-    .sort((a,b) => a.exDate.localeCompare(b.exDate));
-
-  // 去重
-  const seen = new Set();
-  const unique = items.filter(d=>{ if(seen.has(d.code)) return false; seen.add(d.code); return true; });
-
-  if(!unique.length){
-    list.innerHTML = '<div class="upcoming-loading" style="color:var(--muted)">未來 15 天無除息股票</div>';
-    sub.textContent = `${todayStr} ～ ${endStr}`;
-    return;
-  }
-
-  sub.textContent = `${todayStr} ～ ${endStr}　共 ${unique.length} 支`;
-  list.innerHTML = unique.map(d=>{
-    const diff = Math.round((new Date(d.exDate)-today)/86400000);
-    const dayLabel = diff===0?'今天！':diff===1?'明天':`${diff}天後`;
-    const divLabel = d.cash>0&&d.stock>0 ? `現$${d.cash.toFixed(1)}+股$${d.stock.toFixed(1)}`
-                   : d.cash>0 ? `$${d.cash.toFixed(2)}`
-                   : d.stock>0 ? `股$${d.stock.toFixed(2)}` : '';
-    return `<div class="upcoming-item" onclick="qs('${d.code}')">
-      <div class="ui-code">${d.code}</div>
-      <div class="ui-name">${d.name.slice(0,6)}</div>
-      <div class="ui-date">${d.exDate}</div>
-      <div class="ui-days">${dayLabel}${divLabel?' · '+divLabel:''}</div>
-    </div>`;
-  }).join('');
-}
-window.addEventListener('DOMContentLoaded', loadUpcoming);
 
 // 手機底部搜尋列
 function qs2(){
@@ -566,18 +420,25 @@ async function doSearch(){
     // 合併現金＋股票股利，只要其中一項 > 0 就顯示
     const allRows = divData
       .map(d=>({
-        year:         d.year||(d.CashExDividendTradingDate||d.StockExDividendTradingDate||d.date||'').slice(0,4),
+        year:         (d.year||'').trim() ||
+                        (d.CashExDividendTradingDate||d.StockExDividendTradingDate||'').slice(0,4) ||
+                        (d.AnnouncementDate||d.date||'').slice(0,4),  // 公告日年份作最後 fallback
         name:         d.stock_name||code,
         cashDiv:      (parseFloat(d.CashEarningsDistribution)||0)+(parseFloat(d.CashStatutorySurplus)||0),
         stockDiv:     (parseFloat(d.StockEarningsDistribution)||0)+(parseFloat(d.StockStatutorySurplus)||0),
         exDate:       d.CashExDividendTradingDate||'',
         stockExDate:  d.StockExDividendTradingDate||'',
-        cashPayDate:  d.CashDividendPaymentDate||'',    // 現金股利發放日（FinMind 欄位）
+        cashPayDate:  d.CashDividendPaymentDate||'',
+        announceDate: d.AnnouncementDate||'',           // 公告日期
       }))
       .filter(d=>d.cashDiv>0||d.stockDiv>0)
       .sort((a,b)=>{
         const da=a.exDate||a.stockExDate||'';
         const db=b.exDate||b.stockExDate||'';
+        // 無除息日（待公告）排最前面，有日期的依新到舊
+        if(!da && !db) return (b.year||'').localeCompare(a.year||'');
+        if(!da) return -1;  // a 無日期，排前面
+        if(!db) return 1;   // b 無日期，排前面
         return db.localeCompare(da);
       });
     const rows = allRows;
@@ -606,36 +467,8 @@ async function doSearch(){
     prices.forEach(p=>{priceMap[p.date]=p.close;});
     const priceDates=Object.keys(priceMap).sort();
 
-    // ④ EPS（綜合損益表）
-    setLoading(true,'④ 查詢 EPS 財報數據…');
-    let epsMap={};
-    try{
-      const fsData=await fm('TaiwanStockFinancialStatements',code,start);
-      console.log('[EPS] 財報總筆數:', fsData.length);
-      if(fsData.length>0){
-        const allTypes=[...new Set(fsData.map(d=>d.type))];
-        console.log('[EPS] 所有 type 值:', allTypes);
-        console.log('[EPS] 前3筆原始:', JSON.stringify(fsData.slice(0,3)));
-      }
-      // 篩選 EPS 欄位（type 或 origin_name 任一符合）
-      const epsRows=fsData.filter(d=>{
-        const t=(d.type||'').toUpperCase();
-        const o=(d.origin_name||'');
-        // 盡可能廣泛匹配 EPS 欄位
-        return t==='EPS'||t==='BASICEPS'||t==='BASIC_EPS'||t==='DILUTEDEPS'||
-               o.includes('每股盈餘')||o.includes('每股淨利');
-      });
-      console.log('[EPS] 篩出EPS筆數:', epsRows.length, epsRows.slice(0,4));
-      // 每年取日期最大那筆（= Q4 累計全年數字）
-      const tmp={};
-      epsRows.forEach(d=>{
-        const y=d.date.slice(0,4);
-        const v=parseFloat(d.value);
-        if(!isNaN(v)&&(!tmp[y]||d.date>tmp[y].date)) tmp[y]={date:d.date,value:v};
-      });
-      Object.keys(tmp).forEach(y=>{ epsMap[y]=tmp[y].value; });
-      console.log('[EPS] 最終 epsMap:', JSON.stringify(epsMap));
-    }catch(e){ console.warn('[EPS] 查詢失敗:',e.message); }
+
+
 
     // ⑤ 組合
     const today=new Date().toISOString().slice(0,10);
@@ -660,13 +493,12 @@ async function doSearch(){
 
       // 殖利率 = 現金股利 / 除息前收盤價
       const yld = beforePrice>0 ? (row.cashDiv/beforePrice*100) : null;
-      const eps = (row.year in epsMap) ? epsMap[row.year] : null;
 
-      return {...row,beforePrice,isPending,fillDate,fillDays,fillClose,filled,yld,eps};
+      return {...row,beforePrice,isPending,fillDate,fillDays,fillClose,filled,yld};
     });
 
     setLoading(false);
-    render(code,final);
+    render(code, final, prices);
 
   } catch(e){
     setLoading(false);
@@ -678,7 +510,7 @@ async function doSearch(){
   }
 }
 
-function render(code,rows){
+function render(code,rows,prices=[]){
   document.getElementById('rCode').textContent=code;
   document.getElementById('rName').textContent=rows[0]?.name||'';
   document.getElementById('tsub').textContent=`共 ${rows.length} 筆`;
@@ -696,27 +528,124 @@ function render(code,rows){
   const avgYld=ylds.length?(ylds.reduce((a,b)=>a+b,0)/ylds.length).toFixed(2):null;
   document.getElementById('kYield').textContent=avgYld?`${avgYld}%`:'—';
 
-  const epsList=r5.filter(r=>r.eps!=null).map(r=>r.eps);
-  const avgEps=epsList.length?(epsList.reduce((a,b)=>a+b,0)/epsList.length).toFixed(2):null;
-  document.getElementById('kEps').textContent=avgEps?`$${avgEps}`:'—';
-
   document.getElementById('kFill').textContent=hasPast.length?Math.round(filled.length/hasPast.length*100)+'%':'—';
   const fd=filled.filter(r=>r.fillDays!=null);
   document.getElementById('kDays').textContent=fd.length?Math.round(fd.reduce((s,r)=>s+r.fillDays,0)/fd.length)+' 天':'—';
 
-  // Chart
-  const cr=rows.slice(0,12).reverse();
-  const maxD=Math.max(...cr.map(r=>(r.cashDiv||0)+(r.stockDiv||0)),0.01);
-  document.getElementById('cbars').innerHTML=cr.map(r=>{
-    const total=(r.cashDiv||0)+(r.stockDiv||0);
-    const h=Math.max(4,Math.round((total/maxD)*52));
-    const cls=r.isPending?'bp':r.filled?'bf':'bu';
-    return `<div class="ccol">
-      <div class="amt">${((r.cashDiv||0)+(r.stockDiv||0)).toFixed(1)}</div>
-      <div class="bwrap"><div class="bar ${cls}" style="height:${h}px"></div></div>
-      <div class="yr">${(r.year||'').slice(2)}</div>
-    </div>`;
-  }).join('');
+  // ── 今年配息狀況 ──
+  const thisYear = new Date().getFullYear().toString();
+  // 今年資料：year 欄位是今年、除息日在今年、或公告日在今年且有股利金額
+  const thisYearRows = rows.filter(r => {
+    const byYear      = (r.year||'').trim() === thisYear;
+    const byExDate    = r.exDate && r.exDate.startsWith(thisYear);
+    const byAnnounce  = r.announceDate && r.announceDate.startsWith(thisYear) && (r.cashDiv>0||r.stockDiv>0);
+    return byYear || byExDate || byAnnounce;
+  });
+  const tyBox = document.getElementById('thisYearBox');
+  const tyContent = document.getElementById('thisYearContent');
+
+  if(thisYearRows.length > 0){
+    tyBox.style.display = 'block';
+    tyContent.innerHTML = thisYearRows.map(r => {
+      const items = [];
+      if(r.cashDiv > 0){
+        items.push(`<span style="font-family:'Oxanium',monospace;font-size:15px;font-weight:700;color:#d97706">現金股利 $${r.cashDiv.toFixed(2)}</span>`);
+      }
+      if(r.stockDiv > 0){
+        items.push(`<span style="font-family:'Oxanium',monospace;font-size:15px;font-weight:700;color:#7c3aed">股票股利 $${r.stockDiv.toFixed(2)}</span>`);
+      }
+      if(r.exDate){
+        const isPast = r.exDate <= today;
+        items.push(`<span style="font-size:13px;color:${isPast?'#059669':'#e3a008'}">除息日 ${r.exDate}${isPast?' ✓（已除息）':' ⏳（待除息）'}</span>`);
+      } else {
+        items.push(`<span style="font-size:13px;color:#9ca3af">除息日 待公告</span>`);
+      }
+      if(r.cashPayDate){
+        items.push(`<span style="font-size:13px;color:#6b7280">發放日 ${r.cashPayDate}</span>`);
+      } else if(r.cashDiv > 0){
+        items.push(`<span style="font-size:13px;color:#9ca3af">發放日 待公告</span>`);
+      }
+      if(r.announceDate){
+        items.push(`<span style="font-size:11px;color:#d1d5db">公告於 ${r.announceDate}</span>`);
+      }
+      if(!r.exDate && r.cashDiv === 0 && r.stockDiv === 0){
+        items.push(`<span style="font-size:13px;color:#9ca3af">尚未公告</span>`);
+      }
+      return items.join('<span style="color:#e2e6ea;margin:0 4px">｜</span>');
+    }).join('');
+  } else {
+    // 今年無資料：顯示根據去年推估
+    tyBox.style.display = 'block';
+    const lastYearRow = rows.find(r => r.year === (parseInt(thisYear)-1).toString() && r.cashDiv > 0);
+    if(lastYearRow){
+      tyContent.innerHTML = `
+        <span style="font-size:13px;color:#9ca3af">⚠ 今年尚未公告配息</span>
+        <span style="color:#e2e6ea;margin:0 4px">｜</span>
+        <span style="font-size:13px;color:#6b7280">去年配息參考：現金 <strong style="color:#d97706">$${lastYearRow.cashDiv.toFixed(2)}</strong>${lastYearRow.stockDiv>0?' / 股票 <strong style="color:#7c3aed">$'+lastYearRow.stockDiv.toFixed(2)+'</strong>':''}</span>`;
+    } else {
+      tyContent.innerHTML = `<span style="font-size:13px;color:#9ca3af">⚠ 今年尚未公告配息資料</span>`;
+    }
+  }
+
+  // 近五年填息橫條
+  const cr = rows.filter(r => r.exDate && r.beforePrice > 0).slice(0, 5);
+
+  // 現價：用 prices 陣列最後一筆
+  const curPrice = prices.length ? prices[prices.length-1].close : 0;
+  const rtEl = document.getElementById('rtPrice');
+  if(curPrice > 0) rtEl.textContent = `現價 $${curPrice.toFixed(2)}`;
+
+  if(!cr.length){
+    document.getElementById('cbars').innerHTML =
+      '<div style="color:var(--muted);font-size:13px;padding:6px 0">無除息資料</div>';
+  } else {
+    document.getElementById('cbars').innerHTML = '<div class="fp-list">' +
+      cr.map(r => {
+        const target  = r.beforePrice;
+        const afterRef = Math.max(0, target - r.cashDiv);
+
+        let pct = 0, barBg, metaHtml, inner;
+
+        if(r.isPending){
+          barBg = 'linear-gradient(90deg,#fcd34d,#d97706)';
+          inner = `<div class="fp-ghost">⏳ 待除息</div>`;
+          metaHtml = `<div class="fp-meta" style="color:var(--gold)">待除息</div>`;
+        } else if(r.filled){
+          pct = 100;
+          barBg = 'linear-gradient(90deg,#34d399,#059669)';
+          inner = `<div class="fp-fill" style="width:100%;background:${barBg}"><span>✓ 已填息 ${r.fillDays||''}天</span></div>`;
+          metaHtml = `<div class="fp-meta" style="color:var(--green)">$${r.fillClose ? r.fillClose.toFixed(0) : target.toFixed(0)}</div>`;
+        } else {
+          // 用現價計算進度，若無現價用除息後參考價
+          const cur = curPrice > 0 ? curPrice : afterRef;
+          pct = r.cashDiv > 0
+            ? Math.min(100, Math.max(0, Math.round((cur - afterRef) / r.cashDiv * 100)))
+            : 0;
+          barBg = pct >= 70 ? 'linear-gradient(90deg,#fbbf24,#d97706)'
+                : pct >= 40 ? 'linear-gradient(90deg,#fb923c,#ea580c)'
+                : 'linear-gradient(90deg,#f87171,#dc2626)';
+          const diff = target - cur;
+          inner = pct > 8
+            ? `<div class="fp-fill" style="width:${pct}%;background:${barBg}"><span>${pct}%</span></div>`
+            : `<div class="fp-track" style="position:relative"><div style="width:${pct}%;height:100%;background:${barBg};border-radius:6px"></div><div class="fp-ghost">${pct}%</div></div>`;
+          metaHtml = curPrice > 0
+            ? `<div class="fp-meta" style="color:var(--red);font-size:10px">差$${diff.toFixed(1)}</div>`
+            : `<div class="fp-meta" style="color:var(--muted)">—</div>`;
+        }
+
+        const track = r.isPending
+          ? `<div class="fp-track"><div class="fp-fill" style="width:100%;background:${barBg};opacity:.5">${inner}</div></div>`
+          : r.filled
+          ? `<div class="fp-track">${inner}</div>`
+          : `<div class="fp-track">${pct > 8 ? `<div class="fp-fill" style="width:${pct}%;background:${barBg}"><span>${pct}%</span></div>` : `<div style="width:${pct}%;height:100%;background:${barBg};border-radius:6px;position:absolute"></div><div class="fp-ghost">${pct}%</div>`}</div>`;
+
+        return `<div class="fp-row">
+          <div class="fp-yr">${(r.year||'').slice(2)}</div>
+          ${track}
+          ${metaHtml}
+        </div>`;
+      }).join('') + '</div>';
+  }
 
   // Table
   const maxD2=Math.max(...rows.map(r=>r.cashDiv||0),0.01);
@@ -751,10 +680,6 @@ function render(code,rows){
       yldTxt=`<span class="cpr ${cls}">${r.yld.toFixed(2)}%</span>`;
     }
 
-    // EPS
-    const epsTxt=r.eps!=null
-      ?`<span class="ceps">${r.eps>0?'+':''}${r.eps.toFixed(2)}</span>`
-      :'<span style="color:var(--muted)">—</span>';
 
     // 股票股利（元/股）
     const stockDivTxt = r.stockDiv>0
@@ -776,7 +701,6 @@ function render(code,rows){
       <td class="g-fill">${fillPriceTxt}</td>
       <td>${fillDaysTxt}</td>
       <td class="bl-fin g-fin">${yldTxt}</td>
-      <td class="g-fin">${epsTxt}</td>
       <td>${badge}</td>
       <td><span class="tbar" style="width:${bw}px"></span></td>
     </tr>`;
